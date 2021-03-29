@@ -1,42 +1,15 @@
 server:
-  port: 8081
+  port: 8080
 ---
 spring:
   cloud:
     gateway:
       default-filters:
-        - name: GlobalFilter
+        - name : JwtRequestFilter
           args:
-            baseMessage: Spring Cloud Gateway GlobalFilter
-            preLogger: true
-            postLogger: true
+            baseMessage: validation Token Start..
       routes:
         - id: post-svc
           uri: http://localhost:8082/
           predicates:
-            - Path=/main/**
-          filters:
-            - RewritePath=/main/(?<segment>.*), /$\{segment}
-            - name: PostFilter
-              args:
-                baseMessage: Spring Cloud Gateway PostFilter
-                preLogger: true
-                postLogger: true
-      # CORS configuration
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "http://localhost:8080"
-            allowedMethods:
-              - GET
-#              - POST
-#              - PUT
-#              - OPTIONS
-#              - DELETE
-#            allowedHeaders:
-#              - x-requested-with
-#              - authorization
-#              - content-type
-#              - credential
-#              - X-AUTH-TOKEN
-#              - X-CSRF-TOKEN
+            - Path=/**
