@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.*;
 @AutoConfigureWebTestClient
 class GatedemoApplicationTests {
 
-	@Autowired
-	private WebTestClient webClient;
-
-	@Test
-	public void contextLoads() throws Exception {
+//	@Autowired
+//	private WebTestClient webClient;
+//
+//	@Test
+//	public void contextLoads() throws Exception {
 //		//Stubs
 //		stubFor(get(urlEqualTo("/get"))
 //				.willReturn(aResponse()
@@ -50,6 +50,6 @@ class GatedemoApplicationTests {
 //				.expectBody()
 //				.consumeWith(
 //						response -> assertThat(response.getResponseBody()).isEqualTo("fallback".getBytes()));
-	}
+//	}
 
 }
