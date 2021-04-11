@@ -59,7 +59,7 @@ spring:
             postLogger: true
       routes:
         - id: post-svc
-          uri: http://13.125.241.138:8082/
+          uri: http://13.124.17.116:8082/
           predicates:
             - Path=/main/**
           filters:
@@ -74,7 +74,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins:
-              - "http://13.125.241.138:8080"
+              - "http://13.124.17.116:8080"
               - "http://54.180.97.84:8080"
               - "http://13.124.121.251:8080"
             allowedMethods:
