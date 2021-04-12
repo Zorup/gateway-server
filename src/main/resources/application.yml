@@ -28,17 +28,18 @@ spring:
               - "http://localhost:8080"
             allowedMethods:
               - GET
-#              - POST
-#              - PUT
-#              - OPTIONS
-#              - DELETE
-#            allowedHeaders:
-#              - x-requested-with
-#              - authorization
-#              - content-type
-#              - credential
-#              - X-AUTH-TOKEN
-#              - X-CSRF-TOKEN
+              - POST
+              - PUT
+              - OPTIONS
+              - DELETE
+            allowedHeaders:
+              - x-requested-with
+              - authorization
+              - content-type
+              - credential
+              - X-AUTH-TOKEN
+              - X-CSRF-TOKEN
+            allow-credentials: true # 쿠키, 인증헤더 허용
 
 server:
   port: 8081
