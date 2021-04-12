@@ -47,8 +47,7 @@ server:
 
 # 운영서버 배포용
 spring:
-  profiles:
-    active: prod
+  profiles: prod
   cloud:
     gateway:
       default-filters:
