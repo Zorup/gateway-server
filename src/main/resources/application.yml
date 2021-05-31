@@ -10,7 +10,7 @@ spring:
             postLogger: true
       routes:
         - id: post-svc
-          uri: http://localhost:8082/
+          uri: http://172.17.0.1:8082/
           predicates:
             - Path=/main/**
           filters:
@@ -20,12 +20,33 @@ spring:
                 baseMessage: Spring Cloud Gateway PostFilter
                 preLogger: true
                 postLogger: true
+        - id: chat-ws-svc
+          uri: ws://172.17.0.1:8083/
+          predicates:
+            - Path=/chat/chat-conn/**
+          filters:
+            - RewritePath=/chat/(?<segment>.*), /$\{segment}
+            - name: ChatMessageFilter
+              args:
+                baseMessage: Sprint Cloud Gateway ChatMessageFilter
+                preLogger: true
+                postLogger: true
+        - id: chat-http-svc
+          uri: http://172.17.0.1:8083/
+          predicates:
+            - Path=/chat/**
+          filters:
+            - RewritePath=/chat/(?<segment>.*), /$\{segment}
+            - name: ChatFilter
+              args:
+                baseMessage: Sprint Cloud Gateway ChatFilter
+                preLogger: true
+                postLogger: true
       # CORS configuration
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:8080"
+            allowedOrigins: "*"
             allowedMethods:
               - GET
               - POST
@@ -46,50 +67,50 @@ server:
 
 ---
 
-# 운영서버 배포용
-spring:
-  profiles: prod
-  cloud:
-    gateway:
-      default-filters:
-        - name: GlobalFilter
-          args:
-            baseMessage: Spring Cloud Gateway GlobalFilter
-            preLogger: true
-            postLogger: true
-      routes:
-        - id: post-svc
-          uri: http://13.124.17.116:8082/
-          predicates:
-            - Path=/main/**
-          filters:
-            - RewritePath=/main/(?<segment>.*), /$\{segment}
-            - name: PostFilter
-              args:
-                baseMessage: Spring Cloud Gateway PostFilter
-                preLogger: true
-                postLogger: true
-      # CORS configuration
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://13.124.17.116:8080"
-              - "http://54.180.97.84:8080"
-              - "http://13.124.121.251:8080"
-            allowedMethods:
-              - GET
-#              - POST
-#              - PUT
-#              - OPTIONS
-#              - DELETE
-#            allowedHeaders:
-#              - x-requested-with
-#              - authorization
-#              - content-type
-#              - credential
-#              - X-AUTH-TOKEN
-#              - X-CSRF-TOKEN
-
-server:
-  port: 8081
+## 운영서버 배포용
+#spring:
+#  profiles: prod
+#  cloud:
+#    gateway:
+#      default-filters:
+#        - name: GlobalFilter
+#          args:
+#            baseMessage: Spring Cloud Gateway GlobalFilter
+#            preLogger: true
+#            postLogger: true
+#      routes:
+#        - id: post-svc
+#          uri: http://13.124.17.116:8082/
+#          predicates:
+#            - Path=/main/**
+#          filters:
+#            - RewritePath=/main/(?<segment>.*), /$\{segment}
+#            - name: PostFilter
+#              args:
+#                baseMessage: Spring Cloud Gateway PostFilter
+#                preLogger: true
+#                postLogger: true
+#      # CORS configuration
+#      globalcors:
+#        cors-configurations:
+#          '[/**]':
+#            allowedOrigins:
+#              - "http://13.124.17.116:8080"
+#              - "http://54.180.97.84:8080"
+#              - "http://13.124.121.251:8080"
+#            allowedMethods:
+#              - GET
+##              - POST
+##              - PUT
+##              - OPTIONS
+##              - DELETE
+##            allowedHeaders:
+##              - x-requested-with
+##              - authorization
+##              - content-type
+##              - credential
+##              - X-AUTH-TOKEN
+##              - X-CSRF-TOKEN
+#
+#server:
+#  port: 8081
