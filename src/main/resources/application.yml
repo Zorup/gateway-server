@@ -48,6 +48,12 @@ spring:
                 baseMessage: Sprint Cloud Gateway ChatFilter
                 preLogger: true
                 postLogger: true
+        - id: fcm-svc
+          uri: http://localhost:8084/
+          predicates:
+            - Path=/fcm/**
+          filters:
+            - RewritePath=/fcm/(?<segment>.*), /$\{segment}
       # CORS configuration
       globalcors:
         cors-configurations:
