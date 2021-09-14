@@ -1,13 +1,19 @@
-# 디폴트 (아무런 profile 넣지 않으면 이 부분을 자동으로 사용, 로컬용)
+server:
+  port: 8081
+
 spring:
+  profiles:
+    active: local
+---
+
+spring:
+  profiles: local
   cloud:
     gateway:
       default-filters:
-        - name: GlobalFilter
+        - name: JwtRequestFilter
           args:
             baseMessage: Spring Cloud Gateway GlobalFilter
-            preLogger: true
-            postLogger: true
       routes:
         - id: post-svc
           uri: http://localhost:8082/
@@ -42,6 +48,12 @@ spring:
                 baseMessage: Sprint Cloud Gateway ChatFilter
                 preLogger: true
                 postLogger: true
+        - id: fcm-svc
+          uri: http://localhost:8084/
+          predicates:
+            - Path=/fcm/**
+          filters:
+            - RewritePath=/fcm/(?<segment>.*), /$\{segment}
       # CORS configuration
       globalcors:
         cors-configurations:
@@ -62,55 +74,49 @@ spring:
               - X-CSRF-TOKEN
             allow-credentials: true # 쿠키, 인증헤더 허용
 
-server:
-  port: 8081
-
 ---
 
 ## 운영서버 배포용
-#spring:
-#  profiles: prod
-#  cloud:
-#    gateway:
-#      default-filters:
-#        - name: GlobalFilter
-#          args:
-#            baseMessage: Spring Cloud Gateway GlobalFilter
-#            preLogger: true
-#            postLogger: true
-#      routes:
-#        - id: post-svc
-#          uri: http://13.124.17.116:8082/
-#          predicates:
-#            - Path=/main/**
-#          filters:
-#            - RewritePath=/main/(?<segment>.*), /$\{segment}
-#            - name: PostFilter
-#              args:
-#                baseMessage: Spring Cloud Gateway PostFilter
-#                preLogger: true
-#                postLogger: true
-#      # CORS configuration
-#      globalcors:
-#        cors-configurations:
-#          '[/**]':
-#            allowedOrigins:
-#              - "http://13.124.17.116:8080"
-#              - "http://54.180.97.84:8080"
-#              - "http://13.124.121.251:8080"
-#            allowedMethods:
-#              - GET
-##              - POST
-##              - PUT
-##              - OPTIONS
-##              - DELETE
-##            allowedHeaders:
-##              - x-requested-with
-##              - authorization
-##              - content-type
-##              - credential
-##              - X-AUTH-TOKEN
-##              - X-CSRF-TOKEN
-#
-#server:
-#  port: 8081
+spring:
+  profiles: prod
+  cloud:
+    gateway:
+      default-filters:
+        - name: JwtRequestFilter
+          args:
+            baseMessage: Spring Cloud Gateway GlobalFilter
+            preLogger: true
+            postLogger: true
+      routes:
+        - id: post-svc
+          uri: http://13.124.17.116:8082/
+          predicates:
+            - Path=/main/**
+          filters:
+            - RewritePath=/main/(?<segment>.*), /$\{segment}
+            - name: PostFilter
+              args:
+                baseMessage: Spring Cloud Gateway PostFilter
+                preLogger: true
+                postLogger: true
+      # CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://13.124.17.116:8080"
+              - "http://54.180.97.84:8080"
+              - "http://13.124.121.251:8080"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - OPTIONS
+              - DELETE
+            allowedHeaders:
+              - x-requested-with
+              - authorization
+              - content-type
+              - credential
+              - X-AUTH-TOKEN
+              - X-CSRF-TOKEN
