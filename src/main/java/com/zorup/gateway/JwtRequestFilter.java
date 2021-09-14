@@ -60,13 +60,14 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
     }
 
     private boolean isJwtRequest(String uri) {
+        // 후에 인증서버 추가시 그쪽 uri에 맞게 수정 필요, 현재는 main서버쪽 uri로 되어있음
         switch (uri) {
             case "/":
             case "/login":
             case "/register":
             case "/forgot":
-            case "/v1/signin":
-            case "/v1/login":
+            case "/main/v1/signin":
+            case "/main/v1/login":
                 return false;
             default:
                 return true;
