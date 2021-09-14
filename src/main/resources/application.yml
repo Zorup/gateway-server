@@ -10,7 +10,7 @@ spring:
             postLogger: true
       routes:
         - id: post-svc
-          uri: http://172.17.0.1:8082/
+          uri: http://localhost:8082/
           predicates:
             - Path=/main/**
           filters:
@@ -21,7 +21,7 @@ spring:
                 preLogger: true
                 postLogger: true
         - id: chat-ws-svc
-          uri: ws://172.17.0.1:8083/
+          uri: ws://localhost:8083/
           predicates:
             - Path=/chat/chat-conn/**
           filters:
@@ -32,7 +32,7 @@ spring:
                 preLogger: true
                 postLogger: true
         - id: chat-http-svc
-          uri: http://172.17.0.1:8083/
+          uri: http://localhost:8083/
           predicates:
             - Path=/chat/**
           filters:
