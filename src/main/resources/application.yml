@@ -1,19 +1,46 @@
+# 공통
+
 server:
   port: 8081
 
 spring:
   profiles:
-    active: local
----
-
-spring:
-  profiles: local
+    active: local   # 프로파일 지정 없으면 디폴트로 local 사용
   cloud:
     gateway:
       default-filters:
         - name: JwtRequestFilter
           args:
             baseMessage: Spring Cloud Gateway GlobalFilter
+      # CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - OPTIONS
+              - DELETE
+            allowedHeaders:
+              - x-requested-with
+              - authorization
+              - content-type
+              - credential
+              - X-AUTH-TOKEN
+              - X-CSRF-TOKEN
+            allow-credentials: true # 쿠키, 인증헤더 허용
+
+---
+
+# 로컬 IDE기반 개발용 프로파일
+spring:
+  config:
+    activate:
+      on-profile: local
+  cloud:
+    gateway:
       routes:
         - id: post-svc
           uri: http://localhost:8082/
@@ -54,42 +81,19 @@ spring:
             - Path=/fcm/**
           filters:
             - RewritePath=/fcm/(?<segment>.*), /$\{segment}
-      # CORS configuration
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - OPTIONS
-              - DELETE
-            allowedHeaders:
-              - x-requested-with
-              - authorization
-              - content-type
-              - credential
-              - X-AUTH-TOKEN
-              - X-CSRF-TOKEN
-            allow-credentials: true # 쿠키, 인증헤더 허용
 
 ---
 
-## 운영서버 배포용
+## 로컬에서 도커로 띄워놓을때 사용하는 프로파일
 spring:
-  profiles: prod
+  config:
+    activate:
+      on-profile: local-docker
   cloud:
     gateway:
-      default-filters:
-        - name: JwtRequestFilter
-          args:
-            baseMessage: Spring Cloud Gateway GlobalFilter
-            preLogger: true
-            postLogger: true
       routes:
         - id: post-svc
-          uri: http://13.124.17.116:8082/
+          uri: http://host.docker.internal:8082/
           predicates:
             - Path=/main/**
           filters:
@@ -99,24 +103,31 @@ spring:
                 baseMessage: Spring Cloud Gateway PostFilter
                 preLogger: true
                 postLogger: true
-      # CORS configuration
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://13.124.17.116:8080"
-              - "http://54.180.97.84:8080"
-              - "http://13.124.121.251:8080"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - OPTIONS
-              - DELETE
-            allowedHeaders:
-              - x-requested-with
-              - authorization
-              - content-type
-              - credential
-              - X-AUTH-TOKEN
-              - X-CSRF-TOKEN
+        - id: chat-ws-svc
+          uri: ws://host.docker.internal:8083/
+          predicates:
+            - Path=/chat/chat-conn/**
+          filters:
+            - RewritePath=/chat/(?<segment>.*), /$\{segment}
+            - name: ChatMessageFilter
+              args:
+                baseMessage: Sprint Cloud Gateway ChatMessageFilter
+                preLogger: true
+                postLogger: true
+        - id: chat-http-svc
+          uri: http://host.docker.internal:8083/
+          predicates:
+            - Path=/chat/**
+          filters:
+            - RewritePath=/chat/(?<segment>.*), /$\{segment}
+            - name: ChatFilter
+              args:
+                baseMessage: Sprint Cloud Gateway ChatFilter
+                preLogger: true
+                postLogger: true
+        - id: fcm-svc
+          uri: http://host.docker.internal:8084/
+          predicates:
+            - Path=/fcm/**
+          filters:
+            - RewritePath=/fcm/(?<segment>.*), /$\{segment}
