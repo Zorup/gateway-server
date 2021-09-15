@@ -3,24 +3,33 @@ package com.zorup.gateway;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpCookie;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import reactor.core.publisher.Mono;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.Jwts;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
 
 @Component
 public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFilter.Config> {
     private static final Logger logger = LogManager.getLogger(JwtRequestFilter.class);
+    @Value("${jwt.secret}")
+    private String secretKey;
 
     public JwtRequestFilter() {
         super(Config.class);
     }
 
     @Override
-    public GatewayFilter apply(Config config) { //토큰의 존재여부는 잡음 
+    public GatewayFilter apply(Config config) {
         return ((exchange, chain) -> {
             logger.info("JwtRequestFilter : " + config.getBaseMessage());
             String uri = getRequestUri(exchange);
@@ -32,12 +41,11 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             }
             if (isJwtRequest(uri)) {
                 String token = getAccessToken(exchange);
-                if (token == "") {
-                    logger.info("X_auth_token not Exist");
-                    exchange.getResponse().setStatusCode(HttpStatus.valueOf(401));
+                if(!validateToken(token)){
+                    logger.info("Error : token is not valid");
                     return Mono.empty();
                 }
-                logger.info("token value : " + token);
+                logger.info("Current Request token is Valid");
             }
             return chain.filter(exchange);
         });
@@ -55,6 +63,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
         if (cookie.get("X-Auth-Token") != null) {
             a = cookie.get("X-Auth-Token").toString();
             a = a.substring(validIndex, a.length() - 1);
+            logger.info(a);
         }
         return a;
     }
@@ -86,6 +95,15 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
                 return true;
             default:
                 return false;
+        }
+    }
+
+    public boolean validateToken(String jwtToken){
+        try{
+            Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8)).parseClaimsJws(jwtToken);
+            return !claims.getBody().getExpiration().before(new Date());
+        } catch (Exception e){
+            return false;
         }
     }
 

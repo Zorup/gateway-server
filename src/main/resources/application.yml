@@ -3,6 +3,9 @@
 server:
   port: 8081
 
+jwt:
+  secret: 2021!!ZorupMSA
+
 spring:
   profiles:
     active: local   # 프로파일 지정 없으면 디폴트로 local 사용
