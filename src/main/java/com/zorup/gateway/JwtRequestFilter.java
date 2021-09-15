@@ -7,8 +7,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpCookie;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -43,7 +46,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
                 String token = getAccessToken(exchange);
                 if(!validateToken(token)){
                     logger.info("Error : token is not valid");
-                    return Mono.empty();
+                    return handleUnAuthorized(exchange);
                 }
                 logger.info("Current Request token is Valid");
             }
@@ -98,7 +101,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
         }
     }
 
-    public boolean validateToken(String jwtToken){
+    private boolean validateToken(String jwtToken){
         try{
             Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8)).parseClaimsJws(jwtToken);
             return !claims.getBody().getExpiration().before(new Date());
@@ -106,6 +109,13 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             return false;
         }
     }
+
+    private Mono<Void> handleUnAuthorized(ServerWebExchange exchange) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        return response.setComplete();
+    }
+
 
     @Data
     public static class Config {
