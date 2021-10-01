@@ -78,8 +78,9 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             case "/login":
             case "/register":
             case "/forgot":
-            case "/main/v1/signin":
-            case "/main/v1/login":
+            case "/auth/v1/signin":
+            case "/auth/v1/login":
+            case "/auth/v1/refresh":    // TODO refresh토큰 검증로직 추가 후 이 case는 삭제해야함
                 return false;
             default:
                 return true;
