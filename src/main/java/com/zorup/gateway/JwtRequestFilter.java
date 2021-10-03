@@ -75,7 +75,10 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
     }
 
     private String getRequestUri(ServerWebExchange exchange) {
-        String uri = exchange.getRequest().getURI().toString().substring(21);
+        String uri = exchange.getRequest().getURI().toString();
+        logger.info("original uri: " + uri);
+        int startIdx = uri.indexOf('/', 7); // skip "http://" and find index of '/'
+        uri = uri.substring(startIdx);
         return uri;
     }
 
