@@ -19,6 +19,8 @@ import io.jsonwebtoken.Jwts;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 
 @Component
@@ -42,37 +44,71 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
                 logger.info(uri + " is web static Resource Request");
                 return chain.filter(exchange);
             }
+
+            if(isRefreshRequest(uri)){
+                logger.info(uri + " is token refresh request");
+
+                String token = getRefreshToken(exchange).orElse(null);
+                if (token == null)
+                    return handleForbidden(exchange);
+
+                if (!validateToken(token)){
+                    logger.info("Error : token is not valid");
+                    return handleUnAuthorized(exchange);
+                }
+
+                logger.info("Refresh-token is Valid, pass the token to auth-server");
+                return chain.filter(exchange);
+            }
+
             if (isJwtRequest(uri)) {
-                String token = getAccessToken(exchange);
-                if(!validateToken(token)){
+                String token = getAccessToken(exchange).orElse(null);
+                if(token == null || !validateToken(token)){
                     logger.info("Error : token is not valid");
                     return handleUnAuthorized(exchange);
                 }
                 logger.info("Current Request token is Valid");
             }
             return chain.filter(exchange);
+
         });
     }
 
-    private String getRequestUri(org.springframework.web.server.ServerWebExchange exchange) {
+    private String getRequestUri(ServerWebExchange exchange) {
         String uri = exchange.getRequest().getURI().toString().substring(21);
         return uri;
     }
 
-    private String getAccessToken(org.springframework.web.server.ServerWebExchange exchange) {
+    private Optional<String> getAccessToken(ServerWebExchange exchange) {
         final int validIndex = 14;
         MultiValueMap<String, HttpCookie> cookie = exchange.getRequest().getCookies();
-        String a = "";
         if (cookie.get("X-Auth-Token") != null) {
-            a = cookie.get("X-Auth-Token").toString();
+            String a = cookie.get("X-Auth-Token").toString();
             a = a.substring(validIndex, a.length() - 1);
             logger.info(a);
+            return Optional.of(a);
         }
-        return a;
+        return Optional.empty();
+    }
+
+    private Optional<String> getRefreshToken(ServerWebExchange exchange) {
+        List<String> headers = exchange.getRequest().getHeaders().get("Authorization");
+        if (headers == null) {
+            logger.info("No Authorization header");
+            return Optional.empty();
+        }
+
+        for(String header: headers){
+            String type = "refresh";
+            if (header.toLowerCase().startsWith(type.toLowerCase()))
+                return Optional.of(header.substring(type.length()).trim());
+        }
+
+        logger.info("No refresh-token inside Authorization header");
+        return Optional.empty();
     }
 
     private boolean isJwtRequest(String uri) {
-        // 후에 인증서버 추가시 그쪽 uri에 맞게 수정 필요, 현재는 main서버쪽 uri로 되어있음
         switch (uri) {
             case "/":
             case "/login":
@@ -80,11 +116,17 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             case "/forgot":
             case "/auth/v1/signin":
             case "/auth/v1/login":
-            case "/auth/v1/refresh":    // TODO refresh토큰 검증로직 추가 후 이 case는 삭제해야함
                 return false;
             default:
                 return true;
         }
+    }
+
+    private boolean isRefreshRequest(String uri) {
+        if (uri.equals("/auth/v1/refresh"))
+            return true;
+        else
+            return false;
     }
 
     private boolean isResouceRequest(String uri){
@@ -117,6 +159,11 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
         return response.setComplete();
     }
 
+    private Mono<Void> handleForbidden(ServerWebExchange exchange){
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.FORBIDDEN);
+        return response.setComplete();  // 처리 끝을 알리고 반환
+    }
 
     @Data
     public static class Config {
