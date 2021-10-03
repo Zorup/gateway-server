@@ -147,7 +147,7 @@ spring:
           filters:
             - RewritePath=/fcm/(?<segment>.*), /$\{segment}
         - id: auth-svc
-          uri: http://localhost:8085/
+          uri: http://host.docker.internal:8085/
           predicates:
             - Path=/auth/**
           filters:
