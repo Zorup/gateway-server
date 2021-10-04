@@ -38,7 +38,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             String uri = getRequestUri(exchange);
             logger.info("Request Uri :: " + uri);
 
-            if(isResouceRequest(uri)){
+            /*if(isResouceRequest(uri)){
                 logger.info(uri + " is web static Resource Request");
                 return chain.filter(exchange);
             }
@@ -49,7 +49,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
                     return handleUnAuthorized(exchange);
                 }
                 logger.info("Current Request token is Valid");
-            }
+            }*/
             return chain.filter(exchange);
         });
     }
