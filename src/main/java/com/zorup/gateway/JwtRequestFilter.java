@@ -1,17 +1,20 @@
 package com.zorup.gateway;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -40,7 +43,7 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
             String uri = getRequestUri(exchange);
             logger.info("Request Uri :: " + uri);
 
-            /*if(isResouceRequest(uri)){
+            if(isResouceRequest(uri)){
                 logger.info(uri + " is web static Resource Request");
                 return chain.filter(exchange);
             }
@@ -52,9 +55,9 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
                 if (token == null)
                     return handleForbidden(exchange);
 
-                if (!validateToken(token)){
+                if (validateToken(token) != 1){
                     logger.info("Error : token is not valid");
-                    return handleUnAuthorized(exchange);
+                    return handleUnAuthorized(exchange, null);
                 }
 
                 logger.info("Refresh-token is Valid, pass the token to auth-server");
@@ -63,14 +66,14 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
 
             if (isJwtRequest(uri)) {
                 String token = getAccessToken(exchange).orElse(null);
-                if(token == null || !validateToken(token)){
+                int isValid = validateToken(token);
+                if(token == null || isValid != 1){
                     logger.info("Error : token is not valid");
-                    return handleUnAuthorized(exchange);
+                    return handleUnAuthorized(exchange, isValid);
                 }
                 logger.info("Current Request token is Valid");
-            }*/
+            }
             return chain.filter(exchange);
-
         });
     }
 
@@ -147,19 +150,30 @@ public class JwtRequestFilter extends AbstractGatewayFilterFactory<JwtRequestFil
         }
     }
 
-    private boolean validateToken(String jwtToken){
+    private int validateToken(String jwtToken){
         try{
             Jws<Claims> claims = Jwts.parser().setSigningKey(secretKey.getBytes(StandardCharsets.UTF_8)).parseClaimsJws(jwtToken);
-            return !claims.getBody().getExpiration().before(new Date());
+            //토큰이 유효한 경우
+            return 1;
+        } catch(ExpiredJwtException e){
+            //유효한 토큰이나 시간이 만료된 경우
+            return 2;
         } catch (Exception e){
-            return false;
+            //토큰 서명 자체에 문제가 있는 경우
+            return 3;
         }
     }
 
-    private Mono<Void> handleUnAuthorized(ServerWebExchange exchange) {
+    private Mono<Void> handleUnAuthorized(ServerWebExchange exchange, Integer isValid) {
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        return response.setComplete();
+        if(isValid != null && isValid == 2){
+            byte[] bytes = "Expired".getBytes(StandardCharsets.UTF_8);
+            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+            return exchange.getResponse().writeWith(Flux.just(buffer));
+        } else {
+            return response.setComplete();
+        }
     }
 
     private Mono<Void> handleForbidden(ServerWebExchange exchange){
